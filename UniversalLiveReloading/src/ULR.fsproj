@@ -13,7 +13,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.FSharp.Core.netcore" Version="1.0.0-alpha-161023" />
+    <PackageReference Include="FAKE" Version="4.50.0" />
+    <PackageReference Include="Suave" Version="2.0.0" />
+    <PackageReference Include="Suave.AspNetCore" Version="0.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="1.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="1.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="1.1.0" />
+    <PackageReference Include="Microsoft.FSharp.Core.netcore" Version="1.0.0-alpha-161205" />
+    <PackageReference Include="System.Net.NetworkInformation" Version="4.3.0" />
     <PackageReference Include="FSharp.NET.Sdk" Version="1.0.0-beta-*">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
@@ -23,6 +30,7 @@
     <DotNetCliToolReference Include="dotnet-compile-fsc">
       <Version>1.0.0-preview2-020000</Version>
     </DotNetCliToolReference>
+    <DotNetCliToolReference Include="Microsoft.DotNet.Watcher.Tools" Version="1.0.0-msbuild2-final" />
   </ItemGroup>
 
 </Project>
