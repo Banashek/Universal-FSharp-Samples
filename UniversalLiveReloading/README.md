@@ -10,12 +10,12 @@ Steps to setup:
     * `git clone https://github.com/Banashek/Universal-FSharp-Samples`
 3. Restore and run the projects ( I typically do this in two terminal tabs )
     1. Server
-        * cd src
-        * dotnet restore
-        * dotnet watch run
+        * `cd src`
+        * `dotnet restore`
+        * `dotnet watch run`
     2. Client
-        * cd src/client
-        * npm run dev
+        * `cd src/client`
+        * `npm run dev`
 
 ## Things to know
 * Server
