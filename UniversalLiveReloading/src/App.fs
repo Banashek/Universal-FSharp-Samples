@@ -13,6 +13,9 @@ let app =
     choose [
         path "/" >=> Files.browseFileHome "index.html"
         path "/bundle.js" >=> Files.browseFileHome "bundle.js"
+            >=> Writers.setHeader "Cache-Control" "no-cache, no-store, must-revalidate"
+            >=> Writers.setHeader "Pragma" "no-cache"
+            >=> Writers.setHeader "Expires" "0"
         NOT_FOUND "404 - Not found."
     ]
 

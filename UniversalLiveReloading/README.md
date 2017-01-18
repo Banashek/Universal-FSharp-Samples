@@ -20,5 +20,3 @@ Steps to setup:
 ## Things to know
 * Server
     * Watch the output of the server command to see which port it binds to. It will increment the port to find an unused one upon restarting.
-* Client
-    * The server does not send a no-cache for the bundle.js file. After you save a file, fable will recompile it, but then you will need to reset your browsers cache for the file. In chrome, you can open the dev tools, right click on the refresh button, and select "Empty Cache and Hard Reload"
