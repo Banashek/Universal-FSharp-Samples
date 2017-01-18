@@ -1,5 +1,4 @@
-﻿// open FAKE
-open Suave
+﻿open Suave
 open Suave.Files
 open Suave.Filters
 open Suave.Logging
