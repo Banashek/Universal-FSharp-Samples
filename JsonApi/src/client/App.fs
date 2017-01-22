@@ -22,20 +22,21 @@ type Msg =
   | FetchFailure of exn
 
 let init () = 
-  { pokemon = [] }, Cmd.none
+  { pokemon = [] }, Cmd.ofMsg QueryPokemon
 
-let getPokemon =
+let getPokemon (f : string) =
   promise {
     return! Fable.PowerPack.Fetch.fetchAs<PokeList> ("/pokemon") []
   }
 
 let update msg model : Model * Cmd<Msg> =
   match msg with
-  | GetPokemon -> 
-    { model with pokemon = []}, Cmd.ofPromise getQuery FetchSuccess FetchFailure
-  | FetchSuccess PokeList ->
-    { model with pokemon = PokeList}, []
-  | FetchFailure _ ->
+  | QueryPokemon -> 
+    { model with pokemon = []}, Cmd.ofPromise getPokemon "" FetchSuccess FetchFailure
+  | FetchSuccess pokeList ->
+    { model with pokemon = pokeList}, []
+  | FetchFailure ex ->
+    Browser.console.log (unbox ex.Message)
     Browser.console.log "exception occured" |> ignore
     model, []
 
@@ -44,8 +45,10 @@ let view model dispatch =
     OnClick <| fun _ -> msg |> dispatch
 
   R.div []
-    [ R.label [] [ unbox "Pokemon" ]
-      // model.pokemon |> List.map (fun p -> R.label [] [ unbox p.name ])
+    [ R.label [] [ unbox "Pokemen" ]
+      // model.pokemon |> List. (fun p -> R.label [] [ unbox p.name ])
+      for p in model.pokemon do 
+        R.label [] [ unbox p.name ]
     ]
 
 open Elmish.React

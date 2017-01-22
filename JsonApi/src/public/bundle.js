@@ -41,7 +41,9 @@ var Any = new NonDeclaredType("Any");
 var Unit = new NonDeclaredType("Unit");
 
 
-
+function GenericParam(definition) {
+    return new NonDeclaredType("GenericParam", definition);
+}
 
 function makeGeneric(typeDef, genArgs) {
     return new NonDeclaredType("GenericType", typeDef, genArgs);
@@ -70,7 +72,7 @@ function extendInfo(cons, info) {
 
 
 
-function toString$1(o) {
+function toString(o) {
     return o != null && typeof o.ToString == "function" ? o.ToString() : String(o);
 }
 
@@ -216,7 +218,7 @@ var List$1 = (function () {
         this.tail = tail;
     }
     List.prototype.ToString = function () {
-        return "[" + Array.from(this).map(toString$1).join("; ") + "]";
+        return "[" + Array.from(this).map(toString).join("; ") + "]";
     };
     List.prototype.Equals = function (x) {
         if (this === x) {
@@ -311,14 +313,50 @@ var Enumerator = (function () {
 }());
 
 
+function toList(xs) {
+    return foldBack(function (x, acc) {
+        return new List$1(x, acc);
+    }, xs, new List$1());
+}
 
 
 
 
 
-
-
-
+function concat$1(xs) {
+    return delay(function () {
+        var iter = xs[Symbol.iterator]();
+        var output = null;
+        return unfold(function (innerIter) {
+            var hasFinished = false;
+            while (!hasFinished) {
+                if (innerIter == null) {
+                    var cur = iter.next();
+                    if (!cur.done) {
+                        innerIter = cur.value[Symbol.iterator]();
+                    }
+                    else {
+                        hasFinished = true;
+                    }
+                }
+                else {
+                    var cur = innerIter.next();
+                    if (!cur.done) {
+                        output = cur.value;
+                        hasFinished = true;
+                    }
+                    else {
+                        innerIter = null;
+                    }
+                }
+            }
+            return innerIter != null && output != null ? [output, innerIter] : null;
+        }, null);
+    });
+}
+function collect$1(f, xs) {
+    return concat$1(map$1(f, xs));
+}
 
 function compareWith(f, xs, ys) {
     var nonZero = tryFind(function (i) { return i != 0; }, map2(function (x, y) { return f(x, y); }, xs, ys));
@@ -330,7 +368,9 @@ function delay(f) {
         _a;
     var _a;
 }
-
+function empty() {
+    return unfold(function () { return void 0; });
+}
 
 
 
@@ -355,7 +395,13 @@ function fold(f, acc, xs) {
         return acc;
     }
 }
-
+function foldBack(f, xs, acc) {
+    var arr = Array.isArray(xs) || ArrayBuffer.isView(xs) ? xs : Array.from(xs);
+    for (var i = arr.length - 1; i >= 0; i--) {
+        acc = f(arr[i], acc, i);
+    }
+    return acc;
+}
 
 
 
@@ -709,7 +755,7 @@ var FableMap = (function () {
     function FableMap() {
     }
     FableMap.prototype.ToString = function () {
-        return "map [" + Array.from(this).map(toString$1).join("; ") + "]";
+        return "map [" + Array.from(this).map(toString).join("; ") + "]";
     };
     FableMap.prototype.Equals = function (m2) {
         return this.CompareTo(m2) === 0;
@@ -772,20 +818,9 @@ function from(comparer, tree) {
     map$$1.comparer = comparer || new GenericComparer();
     return map$$1;
 }
-function create$1(ie, comparer) {
+function create(ie, comparer) {
     comparer = comparer || new GenericComparer();
     return from(comparer, ie ? tree_ofSeq(comparer, ie) : tree_empty());
-}
-function add(k, v, map$$1) {
-    return from(map$$1.comparer, tree_add(map$$1.comparer, k, v, map$$1.tree));
-}
-
-
-
-
-
-function tryFind$1(k, map$$1) {
-    return tree_tryFind(map$$1.comparer, k, map$$1.tree);
 }
 
 function append$$1(xs, ys) {
@@ -1165,12 +1200,12 @@ var $export = _export;
 $export($export.S + $export.F * !_descriptors, 'Object', {defineProperty: _objectDp.f});
 
 var $Object = _core.Object;
-var defineProperty$3 = function defineProperty$3(it, key, desc){
+var defineProperty$2 = function defineProperty(it, key, desc){
   return $Object.defineProperty(it, key, desc);
 };
 
-var defineProperty$1 = createCommonjsModule(function (module) {
-module.exports = { "default": defineProperty$3, __esModule: true };
+var defineProperty = createCommonjsModule(function (module) {
+module.exports = { "default": defineProperty$2, __esModule: true };
 });
 
 var createClass = createCommonjsModule(function (module, exports) {
@@ -1178,7 +1213,7 @@ var createClass = createCommonjsModule(function (module, exports) {
 
 exports.__esModule = true;
 
-var _defineProperty = defineProperty$1;
+var _defineProperty = defineProperty;
 
 var _defineProperty2 = _interopRequireDefault(_defineProperty);
 
@@ -1758,6 +1793,1562 @@ var ProgramModule = function (__exports) {
     return __exports;
 }({});
 
+var _createClass$4 = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck$4(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Result = function () {
+    function Result(caseName, fields) {
+        _classCallCheck$4(this, Result);
+
+        this.Case = caseName;
+        this.Fields = fields;
+    }
+
+    _createClass$4(Result, [{
+        key: _Symbol.reflection,
+        value: function value() {
+            return {
+                type: "Fable.PowerPack.Result.Result",
+                interfaces: ["FSharpUnion", "System.IEquatable", "System.IComparable"],
+                cases: {
+                    Error: [GenericParam("B")],
+                    Ok: [GenericParam("A")]
+                }
+            };
+        }
+    }, {
+        key: "Equals",
+        value: function Equals(other) {
+            return equalsUnions(this, other);
+        }
+    }, {
+        key: "CompareTo",
+        value: function CompareTo(other) {
+            return compareUnions(this, other);
+        }
+    }]);
+
+    return Result;
+}();
+setType("Fable.PowerPack.Result.Result", Result);
+
+function map$3(fn, a) {
+    return a.Case === "Error" ? new Result("Error", [a.Fields[0]]) : new Result("Ok", [fn(a.Fields[0])]);
+}
+function bind(fn, a) {
+    return a.Case === "Error" ? new Result("Error", [a.Fields[0]]) : fn(a.Fields[0]);
+}
+var ResultBuilder = function () {
+    _createClass$4(ResultBuilder, [{
+        key: _Symbol.reflection,
+        value: function value() {
+            return {
+                type: "Fable.PowerPack.Result.ResultBuilder",
+                properties: {}
+            };
+        }
+    }]);
+
+    function ResultBuilder() {
+        _classCallCheck$4(this, ResultBuilder);
+    }
+
+    _createClass$4(ResultBuilder, [{
+        key: "Bind",
+        value: function Bind(m, f) {
+            return bind(f, m);
+        }
+    }, {
+        key: "Return",
+        value: function Return(a) {
+            return new Result("Ok", [a]);
+        }
+    }, {
+        key: "ReturnFrom",
+        value: function ReturnFrom(m) {
+            return m;
+        }
+    }, {
+        key: "Combine",
+        value: function Combine(left, right) {
+            return this.Bind(left, function () {
+                return right;
+            });
+        }
+    }, {
+        key: "Zero",
+        get: function get() {
+            var _this = this;
+
+            return function (arg00) {
+                return _this.Return(arg00);
+            };
+        }
+    }]);
+
+    return ResultBuilder;
+}();
+setType("Fable.PowerPack.Result.ResultBuilder", ResultBuilder);
+var result = new ResultBuilder();
+
+var _createClass$3 = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck$3(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var _Promise = function (__exports) {
+    var result$$1 = __exports.result = function result$$1(a) {
+        return a.then(function (arg0) {
+            return new Result("Ok", [arg0]);
+        }, function (arg0) {
+            return new Result("Error", [arg0]);
+        });
+    };
+
+    var mapResult = __exports.mapResult = function mapResult(fn, a) {
+        return a.then(function (a_1) {
+            return map$3(fn, a_1);
+        });
+    };
+
+    var bindResult = __exports.bindResult = function bindResult(fn, a) {
+        return a.then(function (a_1) {
+            return a_1.Case === "Error" ? Promise.resolve(new Result("Error", [a_1.Fields[0]])) : result$$1(fn(a_1.Fields[0]));
+        });
+    };
+
+    var PromiseBuilder = __exports.PromiseBuilder = function () {
+        _createClass$3(PromiseBuilder, [{
+            key: _Symbol.reflection,
+            value: function value() {
+                return {
+                    type: "Fable.PowerPack.Promise.PromiseBuilder",
+                    properties: {}
+                };
+            }
+        }]);
+
+        function PromiseBuilder() {
+            _classCallCheck$3(this, PromiseBuilder);
+        }
+
+        _createClass$3(PromiseBuilder, [{
+            key: "For",
+            value: function For(seq, body) {
+                var p = Promise.resolve();
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
+                var _iteratorError = undefined;
+
+                try {
+                    var _loop = function _loop() {
+                        var a = _step.value;
+                        p = p.then(function () {
+                            return body(a);
+                        });
+                    };
+
+                    for (var _iterator = seq[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        _loop();
+                    }
+                } catch (err) {
+                    _didIteratorError = true;
+                    _iteratorError = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion && _iterator.return) {
+                            _iterator.return();
+                        }
+                    } finally {
+                        if (_didIteratorError) {
+                            throw _iteratorError;
+                        }
+                    }
+                }
+
+                return p;
+            }
+        }, {
+            key: "While",
+            value: function While(guard, p) {
+                var _this = this;
+
+                return guard() ? p.then(function () {
+                    return _this.While(guard, p);
+                }) : Promise.resolve();
+            }
+        }, {
+            key: "TryFinally",
+            value: function TryFinally(p, compensation) {
+                return p.then(function (x) {
+                    compensation();
+                    return x;
+                }, function (er) {
+                    compensation();
+                    throw er;
+                });
+            }
+        }, {
+            key: "Delay",
+            value: function Delay(generator) {
+                return {
+                    then: function then(f1, f2) {
+                        try {
+                            return generator().then(f1, f2);
+                        } catch (er) {
+                            if (f2 == null) {
+                                return Promise.reject(er);
+                            } else {
+                                try {
+                                    return Promise.resolve(f2(er));
+                                } catch (er_1) {
+                                    return Promise.reject(er_1);
+                                }
+                            }
+                        }
+                    },
+                    catch: function _catch(f) {
+                        try {
+                            return generator().catch(f);
+                        } catch (er) {
+                            try {
+                                return Promise.resolve(f(er));
+                            } catch (er_1) {
+                                return Promise.reject(er_1);
+                            }
+                        }
+                    }
+                };
+            }
+        }, {
+            key: "Using",
+            value: function Using(resource, binder) {
+                return this.TryFinally(binder(resource), function () {
+                    resource.Dispose();
+                });
+            }
+        }]);
+
+        return PromiseBuilder;
+    }();
+
+    setType("Fable.PowerPack.Promise.PromiseBuilder", PromiseBuilder);
+    return __exports;
+}({});
+
+var PromiseImpl = function (__exports) {
+    var promise = __exports.promise = new _Promise.PromiseBuilder();
+    return __exports;
+}({});
+
+var SetTree = (function () {
+    function SetTree(caseName, fields) {
+        this.Case = caseName;
+        this.Fields = fields;
+    }
+    return SetTree;
+}());
+var tree_tolerance = 2;
+function tree_countAux(s, acc) {
+    return s.Case === "SetOne" ? acc + 1 : s.Case === "SetEmpty" ? acc : tree_countAux(s.Fields[1], tree_countAux(s.Fields[2], acc + 1));
+}
+function tree_count(s) {
+    return tree_countAux(s, 0);
+}
+function tree_SetOne(n) {
+    return new SetTree("SetOne", [n]);
+}
+function tree_SetNode(x, l, r, h) {
+    return new SetTree("SetNode", [x, l, r, h]);
+}
+function tree_height$1(t) {
+    return t.Case === "SetOne" ? 1 : t.Case === "SetNode" ? t.Fields[3] : 0;
+}
+function tree_mk$1(l, k, r) {
+    var matchValue = [l, r];
+    var $target1 = function () {
+        var hl = tree_height$1(l);
+        var hr = tree_height$1(r);
+        var m = hl < hr ? hr : hl;
+        return tree_SetNode(k, l, r, m + 1);
+    };
+    if (matchValue[0].Case === "SetEmpty") {
+        if (matchValue[1].Case === "SetEmpty") {
+            return tree_SetOne(k);
+        }
+        else {
+            return $target1();
+        }
+    }
+    else {
+        return $target1();
+    }
+}
+function tree_rebalance$1(t1, k, t2) {
+    var t1h = tree_height$1(t1);
+    var t2h = tree_height$1(t2);
+    if (t2h > t1h + tree_tolerance) {
+        if (t2.Case === "SetNode") {
+            if (tree_height$1(t2.Fields[1]) > t1h + 1) {
+                if (t2.Fields[1].Case === "SetNode") {
+                    return tree_mk$1(tree_mk$1(t1, k, t2.Fields[1].Fields[1]), t2.Fields[1].Fields[0], tree_mk$1(t2.Fields[1].Fields[2], t2.Fields[0], t2.Fields[2]));
+                }
+                else {
+                    throw new Error("rebalance");
+                }
+            }
+            else {
+                return tree_mk$1(tree_mk$1(t1, k, t2.Fields[1]), t2.Fields[0], t2.Fields[2]);
+            }
+        }
+        else {
+            throw new Error("rebalance");
+        }
+    }
+    else {
+        if (t1h > t2h + tree_tolerance) {
+            if (t1.Case === "SetNode") {
+                if (tree_height$1(t1.Fields[2]) > t2h + 1) {
+                    if (t1.Fields[2].Case === "SetNode") {
+                        return tree_mk$1(tree_mk$1(t1.Fields[1], t1.Fields[0], t1.Fields[2].Fields[1]), t1.Fields[2].Fields[0], tree_mk$1(t1.Fields[2].Fields[2], k, t2));
+                    }
+                    else {
+                        throw new Error("rebalance");
+                    }
+                }
+                else {
+                    return tree_mk$1(t1.Fields[1], t1.Fields[0], tree_mk$1(t1.Fields[2], k, t2));
+                }
+            }
+            else {
+                throw new Error("rebalance");
+            }
+        }
+        else {
+            return tree_mk$1(t1, k, t2);
+        }
+    }
+}
+function tree_add$1(comparer, k, t) {
+    if (t.Case === "SetOne") {
+        var c = comparer.Compare(k, t.Fields[0]);
+        if (c < 0) {
+            return tree_SetNode(k, new SetTree("SetEmpty", []), t, 2);
+        }
+        else if (c === 0) {
+            return t;
+        }
+        else {
+            return tree_SetNode(k, t, new SetTree("SetEmpty", []), 2);
+        }
+    }
+    else if (t.Case === "SetEmpty") {
+        return tree_SetOne(k);
+    }
+    else {
+        var c = comparer.Compare(k, t.Fields[0]);
+        if (c < 0) {
+            return tree_rebalance$1(tree_add$1(comparer, k, t.Fields[1]), t.Fields[0], t.Fields[2]);
+        }
+        else if (c === 0) {
+            return t;
+        }
+        else {
+            return tree_rebalance$1(t.Fields[1], t.Fields[0], tree_add$1(comparer, k, t.Fields[2]));
+        }
+    }
+}
+function tree_mem$1(comparer, k, t) {
+    if (t.Case === "SetOne") {
+        return comparer.Compare(k, t.Fields[0]) === 0;
+    }
+    else if (t.Case === "SetEmpty") {
+        return false;
+    }
+    else {
+        var c = comparer.Compare(k, t.Fields[0]);
+        if (c < 0) {
+            return tree_mem$1(comparer, k, t.Fields[1]);
+        }
+        else if (c === 0) {
+            return true;
+        }
+        else {
+            return tree_mem$1(comparer, k, t.Fields[2]);
+        }
+    }
+}
+function tree_collapseLHS$1(stack) {
+    return stack.tail != null
+        ? stack.head.Case === "SetOne"
+            ? stack
+            : stack.head.Case === "SetNode"
+                ? tree_collapseLHS$1(ofArray([
+                    stack.head.Fields[1],
+                    tree_SetOne(stack.head.Fields[0]),
+                    stack.head.Fields[2]
+                ], stack.tail))
+                : tree_collapseLHS$1(stack.tail)
+        : new List$1();
+}
+function tree_mkIterator$1(s) {
+    return { stack: tree_collapseLHS$1(new List$1(s, new List$1())), started: false };
+}
+
+function tree_moveNext$1(i) {
+    function current(i) {
+        if (i.stack.tail == null) {
+            return null;
+        }
+        else if (i.stack.head.Case === "SetOne") {
+            return i.stack.head.Fields[0];
+        }
+        throw new Error("Please report error: Set iterator, unexpected stack for current");
+    }
+    if (i.started) {
+        if (i.stack.tail == null) {
+            return { done: true, value: null };
+        }
+        else {
+            if (i.stack.head.Case === "SetOne") {
+                i.stack = tree_collapseLHS$1(i.stack.tail);
+                return {
+                    done: i.stack.tail == null,
+                    value: current(i)
+                };
+            }
+            else {
+                throw new Error("Please report error: Set iterator, unexpected stack for moveNext");
+            }
+        }
+    }
+    else {
+        i.started = true;
+        return {
+            done: i.stack.tail == null,
+            value: current(i)
+        };
+    }
+    
+}
+function tree_compareStacks(comparer, l1, l2) {
+    var $target8 = function (n1k, t1) { return tree_compareStacks(comparer, ofArray([new SetTree("SetEmpty", []), tree_SetOne(n1k)], t1), l2); };
+    var $target9 = function (n1k, n1l, n1r, t1) { return tree_compareStacks(comparer, ofArray([n1l, tree_SetNode(n1k, new SetTree("SetEmpty", []), n1r, 0)], t1), l2); };
+    var $target11 = function (n2k, n2l, n2r, t2) { return tree_compareStacks(comparer, l1, ofArray([n2l, tree_SetNode(n2k, new SetTree("SetEmpty", []), n2r, 0)], t2)); };
+    if (l1.tail != null) {
+        if (l2.tail != null) {
+            if (l2.head.Case === "SetOne") {
+                if (l1.head.Case === "SetOne") {
+                    var n1k = l1.head.Fields[0], n2k = l2.head.Fields[0], t1 = l1.tail, t2 = l2.tail, c = comparer.Compare(n1k, n2k);
+                    if (c !== 0) {
+                        return c;
+                    }
+                    else {
+                        return tree_compareStacks(comparer, t1, t2);
+                    }
+                }
+                else {
+                    if (l1.head.Case === "SetNode") {
+                        if (l1.head.Fields[1].Case === "SetEmpty") {
+                            var emp = l1.head.Fields[1], n1k = l1.head.Fields[0], n1r = l1.head.Fields[2], n2k = l2.head.Fields[0], t1 = l1.tail, t2 = l2.tail, c = comparer.Compare(n1k, n2k);
+                            if (c !== 0) {
+                                return c;
+                            }
+                            else {
+                                return tree_compareStacks(comparer, ofArray([n1r], t1), ofArray([emp], t2));
+                            }
+                        }
+                        else {
+                            return $target9(l1.head.Fields[0], l1.head.Fields[1], l1.head.Fields[2], l1.tail);
+                        }
+                    }
+                    else {
+                        var n2k = l2.head.Fields[0], t2 = l2.tail;
+                        return tree_compareStacks(comparer, l1, ofArray([new SetTree("SetEmpty", []), tree_SetOne(n2k)], t2));
+                    }
+                }
+            }
+            else {
+                if (l2.head.Case === "SetNode") {
+                    if (l2.head.Fields[1].Case === "SetEmpty") {
+                        if (l1.head.Case === "SetOne") {
+                            var n1k = l1.head.Fields[0], n2k = l2.head.Fields[0], n2r = l2.head.Fields[2], t1 = l1.tail, t2 = l2.tail, c = comparer.Compare(n1k, n2k);
+                            if (c !== 0) {
+                                return c;
+                            }
+                            else {
+                                return tree_compareStacks(comparer, ofArray([new SetTree("SetEmpty", [])], t1), ofArray([n2r], t2));
+                            }
+                        }
+                        else {
+                            if (l1.head.Case === "SetNode") {
+                                if (l1.head.Fields[1].Case === "SetEmpty") {
+                                    var n1k = l1.head.Fields[0], n1r = l1.head.Fields[2], n2k = l2.head.Fields[0], n2r = l2.head.Fields[2], t1 = l1.tail, t2 = l2.tail, c = comparer.Compare(n1k, n2k);
+                                    if (c !== 0) {
+                                        return c;
+                                    }
+                                    else {
+                                        return tree_compareStacks(comparer, ofArray([n1r], t1), ofArray([n2r], t2));
+                                    }
+                                }
+                                else {
+                                    return $target9(l1.head.Fields[0], l1.head.Fields[1], l1.head.Fields[2], l1.tail);
+                                }
+                            }
+                            else {
+                                return $target11(l2.head.Fields[0], l2.head.Fields[1], l2.head.Fields[2], l2.tail);
+                            }
+                        }
+                    }
+                    else {
+                        if (l1.head.Case === "SetOne") {
+                            return $target8(l1.head.Fields[0], l1.tail);
+                        }
+                        else {
+                            if (l1.head.Case === "SetNode") {
+                                return $target9(l1.head.Fields[0], l1.head.Fields[1], l1.head.Fields[2], l1.tail);
+                            }
+                            else {
+                                return $target11(l2.head.Fields[0], l2.head.Fields[1], l2.head.Fields[2], l2.tail);
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (l1.head.Case === "SetOne") {
+                        return $target8(l1.head.Fields[0], l1.tail);
+                    }
+                    else {
+                        if (l1.head.Case === "SetNode") {
+                            return $target9(l1.head.Fields[0], l1.head.Fields[1], l1.head.Fields[2], l1.tail);
+                        }
+                        else {
+                            return tree_compareStacks(comparer, l1.tail, l2.tail);
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            return 1;
+        }
+    }
+    else {
+        if (l2.tail != null) {
+            return -1;
+        }
+        else {
+            return 0;
+        }
+    }
+}
+function tree_compare(comparer, s1, s2) {
+    if (s1.Case === "SetEmpty") {
+        if (s2.Case === "SetEmpty") {
+            return 0;
+        }
+        else {
+            return -1;
+        }
+    }
+    else {
+        if (s2.Case === "SetEmpty") {
+            return 1;
+        }
+        else {
+            return tree_compareStacks(comparer, ofArray([s1]), ofArray([s2]));
+        }
+    }
+}
+function tree_mkFromEnumerator$1(comparer, acc, e) {
+    var cur = e.next();
+    while (!cur.done) {
+        acc = tree_add$1(comparer, cur.value, acc);
+        cur = e.next();
+    }
+    return acc;
+}
+function tree_ofSeq$1(comparer, c) {
+    var ie = c[Symbol.iterator]();
+    return tree_mkFromEnumerator$1(comparer, new SetTree("SetEmpty", []), ie);
+}
+var FableSet = (function () {
+    function FableSet() {
+    }
+    FableSet.prototype.ToString = function () {
+        return "set [" + Array.from(this).map(toString).join("; ") + "]";
+    };
+    FableSet.prototype.Equals = function (s2) {
+        return this.CompareTo(s2) === 0;
+    };
+    FableSet.prototype.CompareTo = function (s2) {
+        return this === s2 ? 0 : tree_compare(this.comparer, this.tree, s2.tree);
+    };
+    FableSet.prototype[Symbol.iterator] = function () {
+        var i = tree_mkIterator$1(this.tree);
+        return {
+            next: function () { return tree_moveNext$1(i); }
+        };
+    };
+    FableSet.prototype.values = function () {
+        return this[Symbol.iterator]();
+    };
+    FableSet.prototype.has = function (v) {
+        return tree_mem$1(this.comparer, v, this.tree);
+    };
+    FableSet.prototype.add = function (v) {
+        throw new Error("not supported");
+    };
+    FableSet.prototype.delete = function (v) {
+        throw new Error("not supported");
+    };
+    FableSet.prototype.clear = function () {
+        throw new Error("not supported");
+    };
+    Object.defineProperty(FableSet.prototype, "size", {
+        get: function () {
+            return tree_count(this.tree);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    FableSet.prototype[_Symbol.reflection] = function () {
+        return {
+            type: "Microsoft.FSharp.Collections.FSharpSet",
+            interfaces: ["System.IEquatable", "System.IComparable"]
+        };
+    };
+    return FableSet;
+}());
+function from$1(comparer, tree) {
+    var s = new FableSet();
+    s.tree = tree;
+    s.comparer = comparer || new GenericComparer();
+    return s;
+}
+function create$1(ie, comparer) {
+    comparer = comparer || new GenericComparer();
+    return from$1(comparer, ie ? tree_ofSeq$1(comparer, ie) : new SetTree("SetEmpty", []));
+}
+
+function resolveGeneric(idx, enclosing) {
+    try {
+        var t = enclosing.head;
+        if (t.generics == null) {
+            return resolveGeneric(idx, enclosing.tail);
+        }
+        else {
+            var name_1 = typeof idx === "string"
+                ? idx : Object.getOwnPropertyNames(t.generics)[idx];
+            var resolved = t.generics[name_1];
+            if (resolved == null) {
+                return resolveGeneric(idx, enclosing.tail);
+            }
+            else if (resolved instanceof NonDeclaredType && resolved.kind === "GenericParam") {
+                return resolveGeneric(resolved.definition, enclosing.tail);
+            }
+            else {
+                return new List$1(resolved, enclosing);
+            }
+        }
+    }
+    catch (err) {
+        throw new Error("Cannot resolve generic argument " + idx + ": " + err);
+    }
+}
+
+function getTypeFullName(typ, option) {
+    function trim(fullName, option) {
+        if (typeof fullName !== "string") {
+            return "unknown";
+        }
+        if (option === "name") {
+            var i = fullName.lastIndexOf('.');
+            return fullName.substr(i + 1);
+        }
+        if (option === "namespace") {
+            var i = fullName.lastIndexOf('.');
+            return i > -1 ? fullName.substr(0, i) : "";
+        }
+        return fullName;
+    }
+    if (typeof typ === "string") {
+        return typ;
+    }
+    else if (typ instanceof NonDeclaredType) {
+        switch (typ.kind) {
+            case "Unit":
+                return "unit";
+            case "Option":
+                return getTypeFullName(typ.generics, option) + " option";
+            case "Array":
+                return getTypeFullName(typ.generics, option) + "[]";
+            case "Tuple":
+                return typ.generics.map(function (x) { return getTypeFullName(x, option); }).join(" * ");
+            case "GenericParam":
+            case "Interface":
+                return typ.definition;
+            case "Any":
+            default:
+                return "unknown";
+        }
+    }
+    else {
+        var proto = typ.prototype;
+        return trim(typeof proto[_Symbol.reflection] === "function"
+            ? proto[_Symbol.reflection]().type : null, option);
+    }
+}
+
+var Long = (function () {
+    function Long(low, high, unsigned) {
+        this.eq = this.equals;
+        this.neq = this.notEquals;
+        this.lt = this.lessThan;
+        this.lte = this.lessThanOrEqual;
+        this.gt = this.greaterThan;
+        this.gte = this.greaterThanOrEqual;
+        this.comp = this.compare;
+        this.neg = this.negate;
+        this.abs = this.absolute;
+        this.sub = this.subtract;
+        this.mul = this.multiply;
+        this.div = this.divide;
+        this.mod = this.modulo;
+        this.shl = this.shiftLeft;
+        this.shr = this.shiftRight;
+        this.shru = this.shiftRightUnsigned;
+        this.Equals = this.equals;
+        this.CompareTo = this.compare;
+        this.ToString = this.toString;
+        this.low = low | 0;
+        this.high = high | 0;
+        this.unsigned = !!unsigned;
+    }
+    Long.prototype.toInt = function () {
+        return this.unsigned ? this.low >>> 0 : this.low;
+    };
+    Long.prototype.toNumber = function () {
+        if (this.unsigned)
+            return ((this.high >>> 0) * TWO_PWR_32_DBL) + (this.low >>> 0);
+        return this.high * TWO_PWR_32_DBL + (this.low >>> 0);
+    };
+    Long.prototype.toString = function (radix) {
+        if (radix === void 0) { radix = 10; }
+        radix = radix || 10;
+        if (radix < 2 || 36 < radix)
+            throw RangeError('radix');
+        if (this.isZero())
+            return '0';
+        if (this.isNegative()) {
+            if (this.eq(MIN_VALUE)) {
+                var radixLong = fromNumber(radix), div = this.div(radixLong), rem1 = div.mul(radixLong).sub(this);
+                return div.toString(radix) + rem1.toInt().toString(radix);
+            }
+            else
+                return '-' + this.neg().toString(radix);
+        }
+        var radixToPower = fromNumber(pow_dbl(radix, 6), this.unsigned), rem = this;
+        var result = '';
+        while (true) {
+            var remDiv = rem.div(radixToPower), intval = rem.sub(remDiv.mul(radixToPower)).toInt() >>> 0, digits = intval.toString(radix);
+            rem = remDiv;
+            if (rem.isZero())
+                return digits + result;
+            else {
+                while (digits.length < 6)
+                    digits = '0' + digits;
+                result = '' + digits + result;
+            }
+        }
+    };
+    Long.prototype.getHighBits = function () {
+        return this.high;
+    };
+    Long.prototype.getHighBitsUnsigned = function () {
+        return this.high >>> 0;
+    };
+    Long.prototype.getLowBits = function () {
+        return this.low;
+    };
+    Long.prototype.getLowBitsUnsigned = function () {
+        return this.low >>> 0;
+    };
+    Long.prototype.getNumBitsAbs = function () {
+        if (this.isNegative())
+            return this.eq(MIN_VALUE) ? 64 : this.neg().getNumBitsAbs();
+        var val = this.high != 0 ? this.high : this.low;
+        for (var bit = 31; bit > 0; bit--)
+            if ((val & (1 << bit)) != 0)
+                break;
+        return this.high != 0 ? bit + 33 : bit + 1;
+    };
+    Long.prototype.isZero = function () {
+        return this.high === 0 && this.low === 0;
+    };
+    Long.prototype.isNegative = function () {
+        return !this.unsigned && this.high < 0;
+    };
+    Long.prototype.isPositive = function () {
+        return this.unsigned || this.high >= 0;
+    };
+    Long.prototype.isOdd = function () {
+        return (this.low & 1) === 1;
+    };
+    Long.prototype.isEven = function () {
+        return (this.low & 1) === 0;
+    };
+    Long.prototype.equals = function (other) {
+        if (!isLong(other))
+            other = fromValue(other);
+        if (this.unsigned !== other.unsigned && (this.high >>> 31) === 1 && (other.high >>> 31) === 1)
+            return false;
+        return this.high === other.high && this.low === other.low;
+    };
+    Long.prototype.notEquals = function (other) {
+        return !this.eq(other);
+    };
+    Long.prototype.lessThan = function (other) {
+        return this.comp(other) < 0;
+    };
+    Long.prototype.lessThanOrEqual = function (other) {
+        return this.comp(other) <= 0;
+    };
+    Long.prototype.greaterThan = function (other) {
+        return this.comp(other) > 0;
+    };
+    Long.prototype.greaterThanOrEqual = function (other) {
+        return this.comp(other) >= 0;
+    };
+    Long.prototype.compare = function (other) {
+        if (!isLong(other))
+            other = fromValue(other);
+        if (this.eq(other))
+            return 0;
+        var thisNeg = this.isNegative(), otherNeg = other.isNegative();
+        if (thisNeg && !otherNeg)
+            return -1;
+        if (!thisNeg && otherNeg)
+            return 1;
+        if (!this.unsigned)
+            return this.sub(other).isNegative() ? -1 : 1;
+        return (other.high >>> 0) > (this.high >>> 0) || (other.high === this.high && (other.low >>> 0) > (this.low >>> 0)) ? -1 : 1;
+    };
+    Long.prototype.negate = function () {
+        if (!this.unsigned && this.eq(MIN_VALUE))
+            return MIN_VALUE;
+        return this.not().add(ONE);
+    };
+    Long.prototype.absolute = function () {
+        if (!this.unsigned && this.isNegative())
+            return this.negate();
+        else
+            return this;
+    };
+    Long.prototype.add = function (addend) {
+        if (!isLong(addend))
+            addend = fromValue(addend);
+        var a48 = this.high >>> 16;
+        var a32 = this.high & 0xFFFF;
+        var a16 = this.low >>> 16;
+        var a00 = this.low & 0xFFFF;
+        var b48 = addend.high >>> 16;
+        var b32 = addend.high & 0xFFFF;
+        var b16 = addend.low >>> 16;
+        var b00 = addend.low & 0xFFFF;
+        var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
+        c00 += a00 + b00;
+        c16 += c00 >>> 16;
+        c00 &= 0xFFFF;
+        c16 += a16 + b16;
+        c32 += c16 >>> 16;
+        c16 &= 0xFFFF;
+        c32 += a32 + b32;
+        c48 += c32 >>> 16;
+        c32 &= 0xFFFF;
+        c48 += a48 + b48;
+        c48 &= 0xFFFF;
+        return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
+    };
+    Long.prototype.subtract = function (subtrahend) {
+        if (!isLong(subtrahend))
+            subtrahend = fromValue(subtrahend);
+        return this.add(subtrahend.neg());
+    };
+    Long.prototype.multiply = function (multiplier) {
+        if (this.isZero())
+            return ZERO;
+        if (!isLong(multiplier))
+            multiplier = fromValue(multiplier);
+        if (multiplier.isZero())
+            return ZERO;
+        if (this.eq(MIN_VALUE))
+            return multiplier.isOdd() ? MIN_VALUE : ZERO;
+        if (multiplier.eq(MIN_VALUE))
+            return this.isOdd() ? MIN_VALUE : ZERO;
+        if (this.isNegative()) {
+            if (multiplier.isNegative())
+                return this.neg().mul(multiplier.neg());
+            else
+                return this.neg().mul(multiplier).neg();
+        }
+        else if (multiplier.isNegative())
+            return this.mul(multiplier.neg()).neg();
+        if (this.lt(TWO_PWR_24) && multiplier.lt(TWO_PWR_24))
+            return fromNumber(this.toNumber() * multiplier.toNumber(), this.unsigned);
+        var a48 = this.high >>> 16;
+        var a32 = this.high & 0xFFFF;
+        var a16 = this.low >>> 16;
+        var a00 = this.low & 0xFFFF;
+        var b48 = multiplier.high >>> 16;
+        var b32 = multiplier.high & 0xFFFF;
+        var b16 = multiplier.low >>> 16;
+        var b00 = multiplier.low & 0xFFFF;
+        var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
+        c00 += a00 * b00;
+        c16 += c00 >>> 16;
+        c00 &= 0xFFFF;
+        c16 += a16 * b00;
+        c32 += c16 >>> 16;
+        c16 &= 0xFFFF;
+        c16 += a00 * b16;
+        c32 += c16 >>> 16;
+        c16 &= 0xFFFF;
+        c32 += a32 * b00;
+        c48 += c32 >>> 16;
+        c32 &= 0xFFFF;
+        c32 += a16 * b16;
+        c48 += c32 >>> 16;
+        c32 &= 0xFFFF;
+        c32 += a00 * b32;
+        c48 += c32 >>> 16;
+        c32 &= 0xFFFF;
+        c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
+        c48 &= 0xFFFF;
+        return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
+    };
+    Long.prototype.divide = function (divisor) {
+        if (!isLong(divisor))
+            divisor = fromValue(divisor);
+        if (divisor.isZero())
+            throw Error('division by zero');
+        if (this.isZero())
+            return this.unsigned ? UZERO : ZERO;
+        var approx = 0, rem = ZERO, res = ZERO;
+        if (!this.unsigned) {
+            if (this.eq(MIN_VALUE)) {
+                if (divisor.eq(ONE) || divisor.eq(NEG_ONE))
+                    return MIN_VALUE;
+                else if (divisor.eq(MIN_VALUE))
+                    return ONE;
+                else {
+                    var halfThis = this.shr(1);
+                    var approx_1 = halfThis.div(divisor).shl(1);
+                    if (approx_1.eq(ZERO)) {
+                        return divisor.isNegative() ? ONE : NEG_ONE;
+                    }
+                    else {
+                        rem = this.sub(divisor.mul(approx_1));
+                        res = approx_1.add(rem.div(divisor));
+                        return res;
+                    }
+                }
+            }
+            else if (divisor.eq(MIN_VALUE))
+                return this.unsigned ? UZERO : ZERO;
+            if (this.isNegative()) {
+                if (divisor.isNegative())
+                    return this.neg().div(divisor.neg());
+                return this.neg().div(divisor).neg();
+            }
+            else if (divisor.isNegative())
+                return this.div(divisor.neg()).neg();
+            res = ZERO;
+        }
+        else {
+            if (!divisor.unsigned)
+                divisor = divisor.toUnsigned();
+            if (divisor.gt(this))
+                return UZERO;
+            if (divisor.gt(this.shru(1)))
+                return UONE;
+            res = UZERO;
+        }
+        rem = this;
+        while (rem.gte(divisor)) {
+            approx = Math.max(1, Math.floor(rem.toNumber() / divisor.toNumber()));
+            var log2 = Math.ceil(Math.log(approx) / Math.LN2), delta = (log2 <= 48) ? 1 : pow_dbl(2, log2 - 48), approxRes = fromNumber(approx), approxRem = approxRes.mul(divisor);
+            while (approxRem.isNegative() || approxRem.gt(rem)) {
+                approx -= delta;
+                approxRes = fromNumber(approx, this.unsigned);
+                approxRem = approxRes.mul(divisor);
+            }
+            if (approxRes.isZero())
+                approxRes = ONE;
+            res = res.add(approxRes);
+            rem = rem.sub(approxRem);
+        }
+        return res;
+    };
+    Long.prototype.modulo = function (divisor) {
+        if (!isLong(divisor))
+            divisor = fromValue(divisor);
+        return this.sub(this.div(divisor).mul(divisor));
+    };
+    
+    Long.prototype.not = function () {
+        return fromBits(~this.low, ~this.high, this.unsigned);
+    };
+    
+    Long.prototype.and = function (other) {
+        if (!isLong(other))
+            other = fromValue(other);
+        return fromBits(this.low & other.low, this.high & other.high, this.unsigned);
+    };
+    Long.prototype.or = function (other) {
+        if (!isLong(other))
+            other = fromValue(other);
+        return fromBits(this.low | other.low, this.high | other.high, this.unsigned);
+    };
+    Long.prototype.xor = function (other) {
+        if (!isLong(other))
+            other = fromValue(other);
+        return fromBits(this.low ^ other.low, this.high ^ other.high, this.unsigned);
+    };
+    Long.prototype.shiftLeft = function (numBits) {
+        if (isLong(numBits))
+            numBits = numBits.toInt();
+        numBits = numBits & 63;
+        if (numBits === 0)
+            return this;
+        else if (numBits < 32)
+            return fromBits(this.low << numBits, (this.high << numBits) | (this.low >>> (32 - numBits)), this.unsigned);
+        else
+            return fromBits(0, this.low << (numBits - 32), this.unsigned);
+    };
+    Long.prototype.shiftRight = function (numBits) {
+        if (isLong(numBits))
+            numBits = numBits.toInt();
+        numBits = numBits & 63;
+        if (numBits === 0)
+            return this;
+        else if (numBits < 32)
+            return fromBits((this.low >>> numBits) | (this.high << (32 - numBits)), this.high >> numBits, this.unsigned);
+        else
+            return fromBits(this.high >> (numBits - 32), this.high >= 0 ? 0 : -1, this.unsigned);
+    };
+    Long.prototype.shiftRightUnsigned = function (numBits) {
+        if (isLong(numBits))
+            numBits = numBits.toInt();
+        numBits = numBits & 63;
+        if (numBits === 0)
+            return this;
+        else {
+            var high = this.high;
+            if (numBits < 32) {
+                var low = this.low;
+                return fromBits((low >>> numBits) | (high << (32 - numBits)), high >>> numBits, this.unsigned);
+            }
+            else if (numBits === 32)
+                return fromBits(high, 0, this.unsigned);
+            else
+                return fromBits(high >>> (numBits - 32), 0, this.unsigned);
+        }
+    };
+    Long.prototype.toSigned = function () {
+        if (!this.unsigned)
+            return this;
+        return fromBits(this.low, this.high, false);
+    };
+    Long.prototype.toUnsigned = function () {
+        if (this.unsigned)
+            return this;
+        return fromBits(this.low, this.high, true);
+    };
+    Long.prototype.toBytes = function (le) {
+        return le ? this.toBytesLE() : this.toBytesBE();
+    };
+    Long.prototype.toBytesLE = function () {
+        var hi = this.high, lo = this.low;
+        return [
+            lo & 0xff,
+            (lo >>> 8) & 0xff,
+            (lo >>> 16) & 0xff,
+            (lo >>> 24) & 0xff,
+            hi & 0xff,
+            (hi >>> 8) & 0xff,
+            (hi >>> 16) & 0xff,
+            (hi >>> 24) & 0xff
+        ];
+    };
+    Long.prototype.toBytesBE = function () {
+        var hi = this.high, lo = this.low;
+        return [
+            (hi >>> 24) & 0xff,
+            (hi >>> 16) & 0xff,
+            (hi >>> 8) & 0xff,
+            hi & 0xff,
+            (lo >>> 24) & 0xff,
+            (lo >>> 16) & 0xff,
+            (lo >>> 8) & 0xff,
+            lo & 0xff
+        ];
+    };
+    Long.prototype[_Symbol.reflection] = function () {
+        return {
+            type: "System.Int64",
+            interfaces: ["FSharpRecord", "System.IComparable"],
+            properties: {
+                low: "number",
+                high: "number",
+                unsigned: "boolean"
+            }
+        };
+    };
+    return Long;
+}());
+var INT_CACHE = {};
+var UINT_CACHE = {};
+function isLong(obj) {
+    return (obj && obj instanceof Long);
+}
+function fromInt(value, unsigned) {
+    if (unsigned === void 0) { unsigned = false; }
+    var obj, cachedObj, cache;
+    if (unsigned) {
+        value >>>= 0;
+        if (cache = (0 <= value && value < 256)) {
+            cachedObj = UINT_CACHE[value];
+            if (cachedObj)
+                return cachedObj;
+        }
+        obj = fromBits(value, (value | 0) < 0 ? -1 : 0, true);
+        if (cache)
+            UINT_CACHE[value] = obj;
+        return obj;
+    }
+    else {
+        value |= 0;
+        if (cache = (-128 <= value && value < 128)) {
+            cachedObj = INT_CACHE[value];
+            if (cachedObj)
+                return cachedObj;
+        }
+        obj = fromBits(value, value < 0 ? -1 : 0, false);
+        if (cache)
+            INT_CACHE[value] = obj;
+        return obj;
+    }
+}
+function fromNumber(value, unsigned) {
+    if (unsigned === void 0) { unsigned = false; }
+    if (isNaN(value) || !isFinite(value))
+        return unsigned ? UZERO : ZERO;
+    if (unsigned) {
+        if (value < 0)
+            return UZERO;
+        if (value >= TWO_PWR_64_DBL)
+            return MAX_UNSIGNED_VALUE;
+    }
+    else {
+        if (value <= -TWO_PWR_63_DBL)
+            return MIN_VALUE;
+        if (value + 1 >= TWO_PWR_63_DBL)
+            return MAX_VALUE;
+    }
+    if (value < 0)
+        return fromNumber(-value, unsigned).neg();
+    return fromBits((value % TWO_PWR_32_DBL) | 0, (value / TWO_PWR_32_DBL) | 0, unsigned);
+}
+function fromBits(lowBits, highBits, unsigned) {
+    return new Long(lowBits, highBits, unsigned);
+}
+var pow_dbl = Math.pow;
+function fromString(str, unsigned, radix) {
+    if (unsigned === void 0) { unsigned = false; }
+    if (radix === void 0) { radix = 10; }
+    if (str.length === 0)
+        throw Error('empty string');
+    if (str === "NaN" || str === "Infinity" || str === "+Infinity" || str === "-Infinity")
+        return ZERO;
+    if (typeof unsigned === 'number') {
+        radix = unsigned,
+            unsigned = false;
+    }
+    else {
+        unsigned = !!unsigned;
+    }
+    radix = radix || 10;
+    if (radix < 2 || 36 < radix)
+        throw RangeError('radix');
+    var p = str.indexOf('-');
+    if (p > 0)
+        throw Error('interior hyphen');
+    else if (p === 0) {
+        return fromString(str.substring(1), unsigned, radix).neg();
+    }
+    var radixToPower = fromNumber(pow_dbl(radix, 8));
+    var result = ZERO;
+    for (var i = 0; i < str.length; i += 8) {
+        var size = Math.min(8, str.length - i), value = parseInt(str.substring(i, i + size), radix);
+        if (size < 8) {
+            var power = fromNumber(pow_dbl(radix, size));
+            result = result.mul(power).add(fromNumber(value));
+        }
+        else {
+            result = result.mul(radixToPower);
+            result = result.add(fromNumber(value));
+        }
+    }
+    result.unsigned = unsigned;
+    return result;
+}
+function fromValue(val) {
+    if (val instanceof Long)
+        return val;
+    if (typeof val === 'number')
+        return fromNumber(val);
+    if (typeof val === 'string')
+        return fromString(val);
+    return fromBits(val.low, val.high, val.unsigned);
+}
+var TWO_PWR_16_DBL = 1 << 16;
+var TWO_PWR_24_DBL = 1 << 24;
+var TWO_PWR_32_DBL = TWO_PWR_16_DBL * TWO_PWR_16_DBL;
+var TWO_PWR_64_DBL = TWO_PWR_32_DBL * TWO_PWR_32_DBL;
+var TWO_PWR_63_DBL = TWO_PWR_64_DBL / 2;
+var TWO_PWR_24 = fromInt(TWO_PWR_24_DBL);
+var ZERO = fromInt(0);
+var UZERO = fromInt(0, true);
+var ONE = fromInt(1);
+var UONE = fromInt(1, true);
+var NEG_ONE = fromInt(-1);
+var MAX_VALUE = fromBits(0xFFFFFFFF | 0, 0x7FFFFFFF | 0, false);
+var MAX_UNSIGNED_VALUE = fromBits(0xFFFFFFFF | 0, 0xFFFFFFFF | 0, true);
+var MIN_VALUE = fromBits(0, 0x80000000 | 0, false);
+
+function parse(v, kind) {
+    if (kind == null) {
+        kind = typeof v == "string" && v.slice(-1) == "Z" ? 1 : 2;
+    }
+    var date = (v == null) ? new Date() : new Date(v);
+    if (kind === 2) {
+        date.kind = kind;
+    }
+    if (isNaN(date.getTime())) {
+        throw new Error("The string is not a valid Date.");
+    }
+    return date;
+}
+
+var fsFormatRegExp = /(^|[^%])%([0+ ]*)(-?\d+)?(?:\.(\d+))?(\w)/;
+
+
+
+function toHex(value) {
+    return value < 0
+        ? "ff" + (16777215 - (Math.abs(value) - 1)).toString(16)
+        : value.toString(16);
+}
+function fsFormat(str) {
+    var args = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        args[_i - 1] = arguments[_i];
+    }
+    var _cont;
+    function isObject(x) {
+        return x !== null && typeof x === "object" && !(x instanceof Number) && !(x instanceof String) && !(x instanceof Boolean);
+    }
+    function formatOnce(str, rep) {
+        return str.replace(fsFormatRegExp, function (_, prefix, flags, pad, precision, format) {
+            switch (format) {
+                case "f":
+                case "F":
+                    rep = rep.toFixed(precision || 6);
+                    break;
+                case "g":
+                case "G":
+                    rep = rep.toPrecision(precision);
+                    break;
+                case "e":
+                case "E":
+                    rep = rep.toExponential(precision);
+                    break;
+                case "O":
+                    rep = toString(rep);
+                    break;
+                case "A":
+                    try {
+                        rep = JSON.stringify(rep, function (k, v) {
+                            return v && v[Symbol.iterator] && !Array.isArray(v) && isObject(v) ? Array.from(v)
+                                : v && typeof v.ToString === "function" ? toString(v) : v;
+                        });
+                    }
+                    catch (err) {
+                        rep = "{" + Object.getOwnPropertyNames(rep).map(function (k) { return k + ": " + String(rep[k]); }).join(", ") + "}";
+                    }
+                    break;
+                case "x":
+                    rep = toHex(Number(rep));
+                    break;
+                case "X":
+                    rep = toHex(Number(rep)).toUpperCase();
+                    break;
+            }
+            var plusPrefix = flags.indexOf("+") >= 0 && parseInt(rep) >= 0;
+            if (!isNaN(pad = parseInt(pad))) {
+                var ch = pad >= 0 && flags.indexOf("0") >= 0 ? "0" : " ";
+                rep = padLeft(rep, Math.abs(pad) - (plusPrefix ? 1 : 0), ch, pad < 0);
+            }
+            var once = prefix + (plusPrefix ? "+" + rep : rep);
+            return once.replace(/%/g, "%%");
+        });
+    }
+    function makeFn(str) {
+        return function (rep) {
+            var str2 = formatOnce(str, rep);
+            return fsFormatRegExp.test(str2)
+                ? makeFn(str2) : _cont(str2.replace(/%%/g, "%"));
+        };
+    }
+    if (args.length === 0) {
+        return function (cont) {
+            _cont = cont;
+            return fsFormatRegExp.test(str) ? makeFn(str) : _cont(str);
+        };
+    }
+    else {
+        for (var i = 0; i < args.length; i++) {
+            str = formatOnce(str, args[i]);
+        }
+        return str.replace(/%%/g, "%");
+    }
+}
+
+
+
+
+
+
+
+
+function padLeft(str, len, ch, isRight) {
+    ch = ch || " ";
+    str = String(str);
+    len = len - str.length;
+    for (var i = -1; ++i < len;)
+        str = isRight ? str + ch : ch + str;
+    return str;
+}
+
+function combine(path1, path2) {
+    return typeof path2 === "number"
+        ? path1 + "[" + path2 + "]"
+        : (path1 ? path1 + "." : "") + path2;
+}
+function isNullable(typ) {
+    if (typeof typ === "string") {
+        return typ !== "boolean" && typ !== "number";
+    }
+    else if (typ instanceof NonDeclaredType) {
+        return typ.kind !== "Array" && typ.kind !== "Tuple";
+    }
+    else {
+        var info = typeof typ.prototype[_Symbol.reflection] === "function"
+            ? typ.prototype[_Symbol.reflection]() : null;
+        return info ? info.nullable : true;
+    }
+}
+function invalidate(val, typ, path) {
+    throw new Error(fsFormat("%A", val) + " " + (path ? "(" + path + ")" : "") + " is not of type " + getTypeFullName(typ));
+}
+function needsInflate(enclosing) {
+    var typ = enclosing.head;
+    if (typeof typ === "string") {
+        return false;
+    }
+    if (typ instanceof NonDeclaredType) {
+        switch (typ.kind) {
+            case "Option":
+            case "Array":
+                return typ.definition != null || needsInflate(new List$1(typ.generics, enclosing));
+            case "Tuple":
+                return typ.generics.some(function (x) {
+                    return needsInflate(new List$1(x, enclosing));
+                });
+            case "GenericParam":
+                return needsInflate(resolveGeneric(typ.definition, enclosing.tail));
+            case "GenericType":
+                return true;
+            default:
+                return false;
+        }
+    }
+    return true;
+}
+function inflateArray(arr, enclosing, path) {
+    if (!Array.isArray) {
+        invalidate(arr, "array", path);
+    }
+    return needsInflate(enclosing)
+        ? arr.map(function (x, i) { return inflate(x, enclosing, combine(path, i)); })
+        : arr;
+}
+function inflateMap(obj, keyEnclosing, valEnclosing, path) {
+    var inflateKey = keyEnclosing.head !== "string";
+    var inflateVal = needsInflate(valEnclosing);
+    return Object
+        .getOwnPropertyNames(obj)
+        .map(function (k) {
+        var key = inflateKey ? inflate(JSON.parse(k), keyEnclosing, combine(path, k)) : k;
+        var val = inflateVal ? inflate(obj[k], valEnclosing, combine(path, k)) : obj[k];
+        return [key, val];
+    });
+}
+function inflateList(val, enclosing, path) {
+    var ar = [], li = new List$1(), cur = val, inf = needsInflate(enclosing);
+    while (cur.tail != null) {
+        ar.push(inf ? inflate(cur.head, enclosing, path) : cur.head);
+        cur = cur.tail;
+    }
+    ar.reverse();
+    for (var i = 0; i < ar.length; i++) {
+        li = new List$1(ar[i], li);
+    }
+    return li;
+}
+function inflate(val, typ, path) {
+    var enclosing = null;
+    if (typ instanceof List$1) {
+        enclosing = typ;
+        typ = typ.head;
+    }
+    else {
+        enclosing = new List$1(typ, new List$1());
+    }
+    if (val == null) {
+        if (!isNullable(typ)) {
+            invalidate(val, typ, path);
+        }
+        return val;
+    }
+    else if (typeof typ === "string") {
+        if ((typ === "boolean" || typ === "number" || typ === "string") && (typeof val !== typ)) {
+            invalidate(val, typ, path);
+        }
+        return val;
+    }
+    else if (typ instanceof NonDeclaredType) {
+        switch (typ.kind) {
+            case "Unit":
+                return null;
+            case "Option":
+                return inflate(val, new List$1(typ.generics, enclosing), path);
+            case "Array":
+                if (typ.definition != null) {
+                    return new typ.definition(val);
+                }
+                else {
+                    return inflateArray(val, new List$1(typ.generics, enclosing), path);
+                }
+            case "Tuple":
+                return typ.generics.map(function (x, i) {
+                    return inflate(val[i], new List$1(x, enclosing), combine(path, i));
+                });
+            case "GenericParam":
+                return inflate(val, resolveGeneric(typ.definition, enclosing.tail), path);
+            case "GenericType":
+                var def = typ.definition;
+                if (def === List$1) {
+                    return Array.isArray(val)
+                        ? ofArray(inflateArray(val, resolveGeneric(0, enclosing), path))
+                        : inflateList(val, resolveGeneric(0, enclosing), path);
+                }
+                if (def === FableSet) {
+                    return create$1(inflateArray(val, resolveGeneric(0, enclosing), path));
+                }
+                if (def === Set) {
+                    return new Set(inflateArray(val, resolveGeneric(0, enclosing), path));
+                }
+                if (def === FableMap) {
+                    return create(inflateMap(val, resolveGeneric(0, enclosing), resolveGeneric(1, enclosing), path));
+                }
+                if (def === Map) {
+                    return new Map(inflateMap(val, resolveGeneric(0, enclosing), resolveGeneric(1, enclosing), path));
+                }
+                return inflate(val, new List$1(typ.definition, enclosing), path);
+            default:
+                return val;
+        }
+    }
+    else if (typeof typ === "function") {
+        if (typ === Date) {
+            return parse(val);
+        }
+        var info = typeof typ.prototype[_Symbol.reflection] === "function" ? typ.prototype[_Symbol.reflection]() : {};
+        if (info.cases) {
+            var uCase = void 0, uFields = [];
+            if (typeof val === "string") {
+                uCase = val;
+            }
+            else if (typeof val.Case === "string" && Array.isArray(val.Fields)) {
+                uCase = val.Case;
+                uFields = val.Fields;
+            }
+            else {
+                var caseName = Object.getOwnPropertyNames(val)[0];
+                var fieldTypes = info.cases[caseName];
+                if (Array.isArray(fieldTypes)) {
+                    var fields = fieldTypes.length > 1 ? val[caseName] : [val[caseName]];
+                    uCase = caseName;
+                    path = combine(path, caseName);
+                    for (var i = 0; i < fieldTypes.length; i++) {
+                        uFields.push(inflate(fields[i], new List$1(fieldTypes[i], enclosing), combine(path, i)));
+                    }
+                }
+            }
+            if (uCase in info.cases === false) {
+                invalidate(val, typ, path);
+            }
+            return new typ(uCase, uFields);
+        }
+        if (info.properties) {
+            var newObj = new typ();
+            var properties = info.properties;
+            var ks = Object.getOwnPropertyNames(properties);
+            for (var i = 0; i < ks.length; i++) {
+                var k = ks[i];
+                newObj[k] = inflate(val[k], new List$1(properties[k], enclosing), combine(path, k));
+            }
+            return newObj;
+        }
+        return val;
+    }
+    throw new Error("Unexpected type when deserializing JSON: " + typ);
+}
+function ofJson(json, genArgs) {
+    return inflate(JSON.parse(json), genArgs ? genArgs.T : null, "");
+}
+
+function _fetch(url, init) {
+    return fetch(url, init).then(function (response) {
+        return response.ok ? response : function () {
+            throw new Error(String(response.status) + " " + response.statusText + " for URL " + response.url);
+        }();
+    });
+}
+
+
+function fetchAs(url, init, _genArgs) {
+    return _fetch(url, init).then(function (fetched) {
+        return fetched.text();
+    }).then(function (json) {
+        return ofJson(json, {
+            T: _genArgs.T
+        });
+    });
+}
+
 // 7.2.1 RequireObjectCoercible(argument)
 var _defined = function(it){
   if(it == undefined)throw TypeError("Can't call method on  " + it);
@@ -1829,13 +3420,13 @@ _objectSap('getPrototypeOf', function(){
   };
 });
 
-var getPrototypeOf$2 = _core.Object.getPrototypeOf;
+var getPrototypeOf$1 = _core.Object.getPrototypeOf;
 
-var getPrototypeOf$1 = createCommonjsModule(function (module) {
-module.exports = { "default": getPrototypeOf$2, __esModule: true };
+var getPrototypeOf = createCommonjsModule(function (module) {
+module.exports = { "default": getPrototypeOf$1, __esModule: true };
 });
 
-var _Object$getPrototypeOf = unwrapExports(getPrototypeOf$1);
+var _Object$getPrototypeOf = unwrapExports(getPrototypeOf);
 
 // 7.1.4 ToInteger
 var ceil  = Math.ceil;
@@ -1868,10 +3459,10 @@ var _redefine = _hide;
 
 var _iterators = {};
 
-var toString$2 = {}.toString;
+var toString$1 = {}.toString;
 
 var _cof = function(it){
-  return toString$2.call(it).slice(8, -1);
+  return toString$1.call(it).slice(8, -1);
 };
 
 // fallback for non-array-like ES3 and non-enumerable old V8 strings
@@ -2035,7 +3626,7 @@ var _setToStringTag = function(it, tag, stat){
   if(it && !has$3(it = stat ? it : it.prototype, TAG))def(it, TAG, {configurable: true, value: tag});
 };
 
-var create$2         = _objectCreate;
+var create$5         = _objectCreate;
 var descriptor     = _propertyDesc;
 var setToStringTag$1 = _setToStringTag;
 var IteratorPrototype = {};
@@ -2044,7 +3635,7 @@ var IteratorPrototype = {};
 _hide(IteratorPrototype, _wks('iterator'), function(){ return this; });
 
 var _iterCreate = function(Constructor, NAME, next){
-  Constructor.prototype = create$2(IteratorPrototype, {next: descriptor(1, next)});
+  Constructor.prototype = create$5(IteratorPrototype, {next: descriptor(1, next)});
   setToStringTag$1(Constructor, NAME + ' Iterator');
 };
 
@@ -2056,7 +3647,7 @@ var has$1            = _has;
 var Iterators      = _iterators;
 var $iterCreate    = _iterCreate;
 var setToStringTag = _setToStringTag;
-var getPrototypeOf$4 = _objectGpo;
+var getPrototypeOf$3 = _objectGpo;
 var ITERATOR       = _wks('iterator');
 var BUGGY          = !([].keys && 'next' in [].keys());
 var FF_ITERATOR    = '@@iterator';
@@ -2085,7 +3676,7 @@ var _iterDefine = function(Base, NAME, Constructor, next, DEFAULT, IS_SET, FORCE
     , methods, key, IteratorPrototype;
   // Fix native
   if($anyNative){
-    IteratorPrototype = getPrototypeOf$4($anyNative.call(new Base));
+    IteratorPrototype = getPrototypeOf$3($anyNative.call(new Base));
     if(IteratorPrototype !== Object.prototype){
       // Set @@toStringTag to native iterators
       setToStringTag(IteratorPrototype, TAG, true);
@@ -2260,10 +3851,10 @@ var global$5         = _global;
 var core$2           = _core;
 var LIBRARY$1        = _library;
 var wksExt$1         = _wksExt;
-var defineProperty$5 = _objectDp.f;
+var defineProperty$4 = _objectDp.f;
 var _wksDefine = function(name){
   var $Symbol = core$2.Symbol || (core$2.Symbol = LIBRARY$1 ? {} : global$5.Symbol || {});
-  if(name.charAt(0) != '_' && !(name in $Symbol))defineProperty$5($Symbol, name, {value: wksExt$1.f(name)});
+  if(name.charAt(0) != '_' && !(name in $Symbol))defineProperty$4($Symbol, name, {value: wksExt$1.f(name)});
 };
 
 var getKeys$1   = _objectKeys;
@@ -2326,7 +3917,7 @@ var _objectGopn = {
 // fallback for IE11 buggy Object.getOwnPropertyNames with iframe and window
 var toIObject$5 = _toIobject;
 var gOPN$1      = _objectGopn.f;
-var toString$3  = {}.toString;
+var toString$2  = {}.toString;
 
 var windowNames = typeof window == 'object' && window && Object.getOwnPropertyNames
   ? Object.getOwnPropertyNames(window) : [];
@@ -2340,7 +3931,7 @@ var getWindowNames = function(it){
 };
 
 var f$4 = function getOwnPropertyNames(it){
-  return windowNames && toString$3.call(it) == '[object Window]' ? getWindowNames(it) : gOPN$1(toIObject$5(it));
+  return windowNames && toString$2.call(it) == '[object Window]' ? getWindowNames(it) : gOPN$1(toIObject$5(it));
 };
 
 var _objectGopnExt = {
@@ -2384,7 +3975,7 @@ var wksExt         = _wksExt;
 var wksDefine      = _wksDefine;
 var keyOf          = _keyof;
 var enumKeys       = _enumKeys;
-var isArray$2        = _isArray;
+var isArray$1        = _isArray;
 var anObject$3       = _anObject;
 var toIObject$3      = _toIobject;
 var toPrimitive$1    = _toPrimitive;
@@ -2585,7 +4176,7 @@ $JSON && $export$4($export$4.S + $export$4.F * (!USE_NATIVE || $fails(function()
     while(arguments.length > i)args.push(arguments[i++]);
     replacer = args[1];
     if(typeof replacer == 'function')$replacer = replacer;
-    if($replacer || !isArray$2(replacer))replacer = function(key, value){
+    if($replacer || !isArray$1(replacer))replacer = function(key, value){
       if($replacer)value = $replacer.call(this, key, value);
       if(!isSymbol(value))return value;
     };
@@ -2689,10 +4280,10 @@ var _setProto = {
 var $export$5 = _export;
 $export$5($export$5.S, 'Object', {setPrototypeOf: _setProto.set});
 
-var setPrototypeOf$3 = _core.Object.setPrototypeOf;
+var setPrototypeOf$2 = _core.Object.setPrototypeOf;
 
-var setPrototypeOf$1 = createCommonjsModule(function (module) {
-module.exports = { "default": setPrototypeOf$3, __esModule: true };
+var setPrototypeOf = createCommonjsModule(function (module) {
+module.exports = { "default": setPrototypeOf$2, __esModule: true };
 });
 
 var $export$6 = _export;
@@ -2700,12 +4291,12 @@ var $export$6 = _export;
 $export$6($export$6.S, 'Object', {create: _objectCreate});
 
 var $Object$1 = _core.Object;
-var create$5 = function create$5(P, D){
+var create$8 = function create(P, D){
   return $Object$1.create(P, D);
 };
 
-var create$3 = createCommonjsModule(function (module) {
-module.exports = { "default": create$5, __esModule: true };
+var create$6 = createCommonjsModule(function (module) {
+module.exports = { "default": create$8, __esModule: true };
 });
 
 var inherits = createCommonjsModule(function (module, exports) {
@@ -2713,11 +4304,11 @@ var inherits = createCommonjsModule(function (module, exports) {
 
 exports.__esModule = true;
 
-var _setPrototypeOf = setPrototypeOf$1;
+var _setPrototypeOf = setPrototypeOf;
 
 var _setPrototypeOf2 = _interopRequireDefault(_setPrototypeOf);
 
-var _create = create$3;
+var _create = create$6;
 
 var _create2 = _interopRequireDefault(_create);
 
@@ -2891,6 +4482,8 @@ function withReact(placeholderId, program) {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Model = function () {
@@ -2941,9 +4534,13 @@ var Msg = function () {
     value: function () {
       return {
         type: "JsonApiClientWeb.App.Msg",
-        interfaces: ["FSharpUnion", "System.IEquatable", "System.IComparable"],
+        interfaces: ["FSharpUnion", "System.IEquatable"],
         cases: {
-          GetPokemon: []
+          FetchFailure: [Error],
+          FetchSuccess: [makeGeneric(List$1, {
+            T: Pokemon
+          })],
+          QueryPokemon: []
         }
       };
     }
@@ -2952,21 +4549,41 @@ var Msg = function () {
     value: function (other) {
       return equalsUnions(this, other);
     }
-  }, {
-    key: "CompareTo",
-    value: function (other) {
-      return compareUnions(this, other);
-    }
   }]);
 
   return Msg;
 }();
 setType("JsonApiClientWeb.App.Msg", Msg);
 function init() {
-  return [new Model(new List$1()), CmdModule.none()];
+  return [new Model(new List$1()), CmdModule.ofMsg(new Msg("QueryPokemon", []))];
+}
+function getPokemon(f) {
+  return function (builder_) {
+    return builder_.Delay(function () {
+      return fetchAs("/pokemon", {}, {
+        T: makeGeneric(List$1, {
+          T: Pokemon
+        })
+      });
+    });
+  }(PromiseImpl.promise);
 }
 function update(msg, model) {
-  return [new Model(new List$1()), new List$1()];
+  if (msg.Case === "FetchSuccess") {
+    return [new Model(msg.Fields[0]), new List$1()];
+  } else if (msg.Case === "FetchFailure") {
+    console.log(msg.Fields[0].message);
+    console.log("exception occured");
+    return [model, new List$1()];
+  } else {
+    return [new Model(new List$1()), CmdModule.ofPromise(function (f) {
+      return getPokemon(f);
+    }, "", function (arg0) {
+      return new Msg("FetchSuccess", [arg0]);
+    }, function (arg0) {
+      return new Msg("FetchFailure", [arg0]);
+    })];
+  }
 }
 function view(model, dispatch) {
   var onClick = function onClick(msg) {
@@ -2975,7 +4592,17 @@ function view(model, dispatch) {
     }];
   };
 
-  return react.createElement("div", {}, react.createElement("label", {}, "Pokemon"));
+  return react.createElement.apply(undefined, ["div", {}].concat(_toConsumableArray(toList(delay(function () {
+    {
+      react.createElement("label", {}, "Pokemen");
+    }
+    return collect$1(function (p) {
+      {
+        react.createElement("label", {}, p.name);
+      }
+      return empty();
+    }, model.pokemon);
+  })))));
 }
 ProgramModule.run(withReact("elmish-app", ProgramModule.mkProgram(function () {
   return init();
@@ -2992,6 +4619,7 @@ ProgramModule.run(withReact("elmish-app", ProgramModule.mkProgram(function () {
 exports.Model = Model;
 exports.Msg = Msg;
 exports.init = init;
+exports.getPokemon = getPokemon;
 exports.update = update;
 exports.view = view;
 
