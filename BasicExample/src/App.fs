@@ -5,9 +5,7 @@ open Suave.Logging
 open Suave.Operators
 open Suave.RequestErrors
 open Suave.Successful
-open System
 open System.IO
-open System.Net
 
 let app =
     choose [
