@@ -1,6 +1,0 @@
-/bin
-/obj
-node_modules/
-yarn.lock
-bundle.js
-bundle.js.map
