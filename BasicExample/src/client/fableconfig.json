@@ -1,0 +1,12 @@
+{
+  "projFile": "./UniversalClient.fsproj",
+  "sourceMaps": true,
+  "rollup": {
+    "dest": "../public/bundle.js",
+    "external": ["react", "react-dom"],
+    "globals": {
+        "react": "React",
+        "react-dom": "ReactDOM"
+    }
+  }
+}
