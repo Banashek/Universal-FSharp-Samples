@@ -1,5 +1,5 @@
 {
-  "projFile": "./UniversalClient.fsproj",
+  "projFile": "./BasicExampleClient.fsproj",
   "sourceMaps": true,
   "rollup": {
     "dest": "../public/bundle.js",
