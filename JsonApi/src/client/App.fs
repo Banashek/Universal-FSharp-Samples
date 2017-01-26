@@ -63,24 +63,42 @@ let getPokeBGColor t =
   | Steel -> "#818C6B"
   | Fairy -> "#818C6B"
 
+let getPokeBGHoverColor t =
+  match t with
+  | Normal -> "#DEDFDF"
+  | Fire -> "#E31023"
+  | Water -> "#67B0FF"
+  | Electric -> "#C5A51C"
+  | Grass -> "#67A369"
+  | Ice -> "#84D9D9"
+  | Fighting -> "#A14F45"
+  | Poison -> "#9310EB"
+  | Ground -> "#8E4618"
+  | Flying -> "#8EBEFF"
+  | Psychic -> "#381A55"
+  | Bug -> "#778E43"
+  | Rock -> "#494747"
+  | Ghost -> "#6F65B9"
+  | Dragon -> "#939A7B"
+  | Dark -> "#939A7B"
+  | Steel -> "#939A7B"
+  | Fairy -> "#939A7B"
+
 let pokeLabel =
   R.label [] [unbox "Pokemon"]
 
-let pokeComponent p =
+let pokeCardFront p =
   R.div
     [ Style
-        [ BackgroundColor (unbox getPokeBGColor (List.head p.pokemonType)) 
-          Border "1px solid black"
-          BorderTopLeftRadius "10px"
-          BorderTopRightRadius "10px"
-          BorderBottomLeftRadius "10px"
-          BorderBottomRightRadius "10px"
+        [ BackfaceVisibility "hidden"
           Display "flex"
-          FlexShrink 1.
           FlexDirection "column"
-          Margin "10px"
-          Padding "10px" ]
-      OnClick (fun e -> Browser.console.log p.name) ]
+          FlexItemAlign "center"
+          JustifyContent "center"
+          Position "absolute"
+          Height "100%"
+          CSSProp.Width "100%"
+          ZIndex 1. ]]
     [ R.img
         [ Src p.img
           Style
@@ -91,6 +109,75 @@ let pokeComponent p =
               Color "white"]]
             [ unbox p.name ]]
 
+let pokeCardBack p =
+  R.div
+    [ Style
+        [ BackfaceVisibility "hidden"
+          Position "absolute"
+          Height "100%"
+          CSSProp.Width "100%"
+          CSSProp.Transform "rotateY(-180deg)"
+          ZIndex 2.]]
+    [ R.label
+        [ Style
+            [ AlignSelf "center"
+              Color "white"]]
+            [ unbox p.name ]]
+
+let pokeCard p =
+  R.div
+    [ ClassName "poke-card"
+      Style
+        [ CSSProp.Width "100%"
+          Height "100%"
+          TransformStyle "preserve-3d"
+          Transition "0.5s" ]]
+    [ pokeCardFront p
+      pokeCardBack p ]
+
+let flipComponent (c : obj) transform =
+  c?style?webkitTransform <- transform
+  c?style?MozTransform <- transform
+  c?style?transform <- transform
+
+let pokeComponent p =
+  let bgColor = getPokeBGColor (List.head p.pokemonType)
+  let bgHoverColor = getPokeBGHoverColor (List.head p.pokemonType)
+  R.div
+    [ ClassName "poke-component"
+      Style
+        [ BackgroundColor bgColor
+          Border "1px solid black"
+          BorderTopLeftRadius "10px"
+          BorderTopRightRadius "10px"
+          BorderBottomLeftRadius "10px"
+          BorderBottomRightRadius "10px"
+          Display "flex"
+          Height "200px"
+          CSSProp.Width "200px"
+          FlexDirection "column"
+          JustifyContent "center"
+          FlexItemAlign "center"
+          Margin "10px"
+          Perspective "800" ]
+      OnClick (fun e -> Browser.console.log p.name)
+      OnMouseOver (fun e ->
+        let pokeComponent = e.target?closest(".poke-component")
+        pokeComponent?style?backgroundColor <- bgHoverColor
+        let pokeCard =
+          if isNull (e.target?closest(".poke-card"))
+          then
+            ((unbox<ResizeArray<Browser.Element>> (e.target?getElementsByClassName("poke-card"))).[0])
+          else
+            (unbox<Browser.Element> (e.target?closest(".poke-card")))
+        flipComponent pokeCard "rotateY(-180deg)" )
+      OnMouseOut (fun e ->
+        let pokeComponent = e.target?closest(".poke-component")
+        pokeComponent?style?backgroundColor <- bgColor
+        let pokeCard = e.target?closest(".poke-card")
+        flipComponent pokeCard "rotateY(0deg)") ]
+    [ pokeCard p ]
+
 let pokeList model =
   model.pokemon
   |> List.map (fun p -> pokeComponent p)
@@ -98,7 +185,8 @@ let pokeList model =
 let pokeListComponent model =
   R.div
     [ Style
-        [ Display "flex" ]]
+        [ Display "flex"
+          FlexWrap "wrap" ]]
     (pokeList model)
 
 let layout model =

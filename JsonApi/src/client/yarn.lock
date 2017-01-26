@@ -827,9 +827,9 @@ fable-powerpack@^0.0.19:
   version "0.0.19"
   resolved "https://registry.yarnpkg.com/fable-powerpack/-/fable-powerpack-0.0.19.tgz#9349aab7d01958bf6936a76fefee06e1a7424294"
 
-fable-react@^0.8.0:
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/fable-react/-/fable-react-0.8.0.tgz#f3adef0f99cf3899baa62f1787e29cbecf10785c"
+fable-react@^0.8.2:
+  version "0.8.4"
+  resolved "https://registry.yarnpkg.com/fable-react/-/fable-react-0.8.4.tgz#3b26a74c32d2753ca17378bd1ceaaf0859ce871a"
 
 fbjs@^0.8.1, fbjs@^0.8.4:
   version "0.8.8"

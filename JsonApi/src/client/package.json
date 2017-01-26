@@ -21,7 +21,7 @@
     "fable-elmish": "^0.8.0",
     "fable-elmish-react": "^0.8.2",
     "fable-powerpack": "^0.0.19",
-    "fable-react": "^0.8.0",
+    "fable-react": "^0.8.2",
     "fs-extra": "^2.0.0"
   }
 }
