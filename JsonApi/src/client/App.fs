@@ -87,42 +87,45 @@ let getPokeBGHoverColor t =
 let pokeLabel =
   R.label [] [unbox "Pokemon"]
 
+let whiteLabel text =
+  R.label
+    [ Style
+        [ Color "white" ]]
+    [ text ]
+
 let pokeCardFront p =
   R.div
     [ Style
         [ BackfaceVisibility "hidden"
           Display "flex"
           FlexDirection "column"
-          FlexItemAlign "center"
+          AlignItems "center"
           JustifyContent "center"
           Position "absolute"
           Height "100%"
           CSSProp.Width "100%"
           ZIndex 1. ]]
-    [ R.img
-        [ Src p.img
-          Style
-            [ AlignSelf "center" ]] []
-      R.label
-        [ Style
-            [ AlignSelf "center"
-              Color "white"]]
-            [ unbox p.name ]]
+    [ R.img [ Src p.img ] []
+      whiteLabel (unbox p.name) ]
 
 let pokeCardBack p =
+  let pType = (List.head p.pokemonType)
   R.div
     [ Style
         [ BackfaceVisibility "hidden"
           Position "absolute"
+          Display "flex"
+          FlexDirection "column"
+          AlignItems "center"
+          JustifyContent "center"
           Height "100%"
           CSSProp.Width "100%"
           CSSProp.Transform "rotateY(-180deg)"
           ZIndex 2.]]
-    [ R.label
-        [ Style
-            [ AlignSelf "center"
-              Color "white"]]
-            [ unbox p.name ]]
+    [ whiteLabel (unbox p.name)
+      whiteLabel (unbox ("Type: " + (sprintf "%A" pType?Case)))
+      whiteLabel (unbox ("Height: " + p.height.ToString() + "m"))
+      whiteLabel (unbox ("Weight: " + p.weight.ToString() + "kg"))]
 
 let pokeCard p =
   R.div
@@ -174,7 +177,12 @@ let pokeComponent p =
       OnMouseOut (fun e ->
         let pokeComponent = e.target?closest(".poke-component")
         pokeComponent?style?backgroundColor <- bgColor
-        let pokeCard = e.target?closest(".poke-card")
+        let pokeCard =
+          if isNull (e.target?closest(".poke-card"))
+          then
+            ((unbox<ResizeArray<Browser.Element>> (e.target?getElementsByClassName("poke-card"))).[0])
+          else
+            (unbox<Browser.Element> (e.target?closest(".poke-card")))
         flipComponent pokeCard "rotateY(0deg)") ]
     [ pokeCard p ]
 
@@ -186,6 +194,7 @@ let pokeListComponent model =
   R.div
     [ Style
         [ Display "flex"
+          JustifyContent "center"
           FlexWrap "wrap" ]]
     (pokeList model)
 
@@ -193,9 +202,9 @@ let layout model =
   R.div
     [ Style
         [ Display "flex"
+          AlignItems "center"
           FlexDirection "column" ]]
     [ R.label [] [unbox "Pokemon"]
-      R.br [] []
       pokeListComponent model ]
 
 let view model dispatch =
