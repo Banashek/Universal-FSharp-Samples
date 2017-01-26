@@ -2,3 +2,5 @@ node_modules/
 bin/
 obj/
 npm-debug.log
+bundle.js
+bundle.js.map

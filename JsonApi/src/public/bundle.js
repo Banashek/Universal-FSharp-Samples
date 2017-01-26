@@ -820,8 +820,10 @@ var PokemonType = function () {
                 interfaces: ["FSharpUnion", "System.IEquatable", "System.IComparable"],
                 cases: {
                     Bug: [],
+                    Dark: [],
                     Dragon: [],
                     Electric: [],
+                    Fairy: [],
                     Fighting: [],
                     Fire: [],
                     Flying: [],
@@ -833,6 +835,7 @@ var PokemonType = function () {
                     Poison: [],
                     Psychic: [],
                     Rock: [],
+                    Steel: [],
                     Water: []
                 }
             };
@@ -888,7 +891,7 @@ var BriefPokemon = function () {
 }();
 setType("SharedTypes.Types.BriefPokemon", BriefPokemon);
 var Pokemon = function () {
-    function Pokemon(id, num, name, img, pokemonType, height, weight, weaknesses, evolutions) {
+    function Pokemon(id, num, name, img, pokemonType, height, weight, weaknesses, nextEvolutions, previousEvolutions) {
         _classCallCheck$1(this, Pokemon);
 
         this.id = id;
@@ -899,7 +902,8 @@ var Pokemon = function () {
         this.height = height;
         this.weight = weight;
         this.weaknesses = weaknesses;
-        this.evolutions = evolutions;
+        this.nextEvolutions = nextEvolutions;
+        this.previousEvolutions = previousEvolutions;
     }
 
     _createClass$1(Pokemon, [{
@@ -921,7 +925,10 @@ var Pokemon = function () {
                     weaknesses: makeGeneric(List$1, {
                         T: PokemonType
                     }),
-                    evolutions: makeGeneric(List$1, {
+                    nextEvolutions: makeGeneric(List$1, {
+                        T: BriefPokemon
+                    }),
+                    previousEvolutions: makeGeneric(List$1, {
                         T: BriefPokemon
                     })
                 }
@@ -4529,19 +4536,106 @@ function update(msg, model) {
     })];
   }
 }
+function getPokeBGColor(t) {
+  if (t.Case === "Fire") {
+    return "#D00006";
+  } else if (t.Case === "Water") {
+    return "#4A82FF";
+  } else if (t.Case === "Electric") {
+    return "#B79D04";
+  } else if (t.Case === "Grass") {
+    return "#549057";
+  } else if (t.Case === "Ice") {
+    return "#73C4CB";
+  } else if (t.Case === "Fighting") {
+    return "#924036";
+  } else if (t.Case === "Poison") {
+    return "#8400DC";
+  } else if (t.Case === "Ground") {
+    return "#803909";
+  } else if (t.Case === "Flying") {
+    return "#80ADFF";
+  } else if (t.Case === "Psychic") {
+    return "#2B0F48";
+  } else if (t.Case === "Bug") {
+    return "#687F35";
+  } else if (t.Case === "Rock") {
+    return "#363636";
+  } else if (t.Case === "Ghost") {
+    return "#6257AD";
+  } else if (t.Case === "Dragon") {
+    return "#818C6B";
+  } else if (t.Case === "Dark") {
+    return "#818C6B";
+  } else if (t.Case === "Steel") {
+    return "#818C6B";
+  } else if (t.Case === "Fairy") {
+    return "#818C6B";
+  } else {
+    return "#CDCDCD";
+  }
+}
 var pokeLabel = react.createElement("label", {}, "Pokemon");
+function pokeComponent(p) {
+  return react.createElement("div", {
+    style: {
+      backgroundColor: function () {
+        var clo1 = function clo1(t) {
+          return getPokeBGColor(t);
+        };
+
+        return function (arg10) {
+          return clo1(arg10);
+        };
+      }()(p.pokemonType.head),
+      border: "1px solid black",
+      borderTopLeftRadius: "10px",
+      borderTopRightRadius: "10px",
+      borderBottomLeftRadius: "10px",
+      borderBottomRightRadius: "10px",
+      display: "flex",
+      flexShrink: 1,
+      flexDirection: "column",
+      margin: "10px",
+      padding: "10px"
+    },
+    onClick: function onClick(e) {
+      console.log(p.name);
+    }
+  }, react.createElement("img", {
+    src: p.img,
+    style: {
+      alignSelf: "center"
+    }
+  }), react.createElement("label", {
+    style: {
+      alignSelf: "center",
+      color: "white"
+    }
+  }, p.name));
+}
 function pokeList(model) {
   return map$$1(function (p) {
-    return react.createElement("div", {}, react.createElement("img", {
-      src: p.img
-    }), react.createElement("label", {}, p.name), react.createElement("br", {}));
+    return pokeComponent(p);
   }, model.pokemon);
 }
 function pokeListComponent(model) {
-  return react.createElement.apply(undefined, ["div", {}].concat(_toConsumableArray(append$$1(ofArray([react.createElement("label", {}, "Pokemon"), react.createElement("br", {})]), pokeList(model)))));
+  return react.createElement.apply(undefined, ["div", {
+    style: {
+      display: "flex"
+    }
+  }].concat(_toConsumableArray(pokeList(model))));
+}
+function layout(model) {
+  return react.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column"
+    }
+  }, react.createElement("label", {}, "Pokemon"), react.createElement("br", {}), pokeListComponent(model));
 }
 function view(model, dispatch) {
-  return pokeListComponent(model);
+  return layout(model);
 }
 ProgramModule.run(withReact("elmish-app", ProgramModule.mkProgram(function () {
   return init();
@@ -4560,9 +4654,12 @@ exports.Msg = Msg;
 exports.init = init;
 exports.getPokemon = getPokemon;
 exports.update = update;
+exports.getPokeBGColor = getPokeBGColor;
 exports.pokeLabel = pokeLabel;
+exports.pokeComponent = pokeComponent;
 exports.pokeList = pokeList;
 exports.pokeListComponent = pokeListComponent;
+exports.layout = layout;
 exports.view = view;
 
 }((this.JsonApiClientWeb = this.JsonApiClientWeb || {}),React,ReactDOM));

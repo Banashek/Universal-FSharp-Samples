@@ -16,6 +16,9 @@ type PokemonType =
     | Rock
     | Ghost
     | Dragon
+    | Dark
+    | Steel
+    | Fairy
 
 type BriefPokemon = {
     num : string
@@ -31,5 +34,6 @@ type Pokemon = {
     height : float
     weight : float
     weaknesses : PokemonType list
-    evolutions : BriefPokemon list
+    nextEvolutions : BriefPokemon list
+    previousEvolutions : BriefPokemon list
 }
