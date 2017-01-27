@@ -63,27 +63,6 @@ let getPokeBGColor t =
   | Steel -> "#818C6B"
   | Fairy -> "#818C6B"
 
-let getPokeBGHoverColor t =
-  match t with
-  | Normal -> "#DEDFDF"
-  | Fire -> "#E31023"
-  | Water -> "#67B0FF"
-  | Electric -> "#C5A51C"
-  | Grass -> "#67A369"
-  | Ice -> "#84D9D9"
-  | Fighting -> "#A14F45"
-  | Poison -> "#9310EB"
-  | Ground -> "#8E4618"
-  | Flying -> "#8EBEFF"
-  | Psychic -> "#381A55"
-  | Bug -> "#778E43"
-  | Rock -> "#494747"
-  | Ghost -> "#6F65B9"
-  | Dragon -> "#939A7B"
-  | Dark -> "#939A7B"
-  | Steel -> "#939A7B"
-  | Fairy -> "#939A7B"
-
 let pokeLabel =
   R.label [] [unbox "Pokemon"]
 
@@ -97,6 +76,11 @@ let pokeCardFront p =
   R.div
     [ Style
         [ BackfaceVisibility "hidden"
+          BackgroundColor (getPokeBGColor (List.head p.pokemonType))
+          BorderTopLeftRadius "10px"
+          BorderTopRightRadius "10px"
+          BorderBottomLeftRadius "10px"
+          BorderBottomRightRadius "10px"
           Display "flex"
           FlexDirection "column"
           AlignItems "center"
@@ -113,6 +97,11 @@ let pokeCardBack p =
   R.div
     [ Style
         [ BackfaceVisibility "hidden"
+          BackgroundColor (getPokeBGColor (List.head p.pokemonType))
+          BorderTopLeftRadius "10px"
+          BorderTopRightRadius "10px"
+          BorderBottomLeftRadius "10px"
+          BorderBottomRightRadius "10px"
           Position "absolute"
           Display "flex"
           FlexDirection "column"
@@ -133,6 +122,11 @@ let pokeCard p =
       Style
         [ CSSProp.Width "100%"
           Height "100%"
+          Border "1px solid black"
+          BorderTopLeftRadius "10px"
+          BorderTopRightRadius "10px"
+          BorderBottomLeftRadius "10px"
+          BorderBottomRightRadius "10px"
           TransformStyle "preserve-3d"
           Transition "0.5s" ]]
     [ pokeCardFront p
@@ -144,18 +138,10 @@ let flipComponent (c : obj) transform =
   c?style?transform <- transform
 
 let pokeComponent p =
-  let bgColor = getPokeBGColor (List.head p.pokemonType)
-  let bgHoverColor = getPokeBGHoverColor (List.head p.pokemonType)
   R.div
     [ ClassName "poke-component"
       Style
-        [ BackgroundColor bgColor
-          Border "1px solid black"
-          BorderTopLeftRadius "10px"
-          BorderTopRightRadius "10px"
-          BorderBottomLeftRadius "10px"
-          BorderBottomRightRadius "10px"
-          Display "flex"
+        [ Display "flex"
           Height "200px"
           CSSProp.Width "200px"
           FlexDirection "column"
@@ -165,8 +151,6 @@ let pokeComponent p =
           Perspective "800" ]
       OnClick (fun e -> Browser.console.log p.name)
       OnMouseOver (fun e ->
-        let pokeComponent = e.target?closest(".poke-component")
-        pokeComponent?style?backgroundColor <- bgHoverColor
         let pokeCard =
           if isNull (e.target?closest(".poke-card"))
           then
@@ -175,8 +159,6 @@ let pokeComponent p =
             (unbox<Browser.Element> (e.target?closest(".poke-card")))
         flipComponent pokeCard "rotateY(-180deg)" )
       OnMouseOut (fun e ->
-        let pokeComponent = e.target?closest(".poke-component")
-        pokeComponent?style?backgroundColor <- bgColor
         let pokeCard =
           if isNull (e.target?closest(".poke-card"))
           then
